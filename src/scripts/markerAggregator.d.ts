@@ -15,4 +15,6 @@ interface IAggregator {
 	getBaseMarkers (): any [];
 }
 
-declare var MarkerAggregator: IAggregator;
+declare var MarkerAggregator: {
+	new (map: any, options: IAggregatorOptions): IAggregator;
+}

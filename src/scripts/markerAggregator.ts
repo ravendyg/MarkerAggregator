@@ -1,9 +1,12 @@
 /// <reference path="markerAggregator.d.ts" />
+/* global L */
 (function(context){
 'use strict';
 	
 	class MarkerAggregator implements IAggregator {
 		_private = {
+			// parent map
+			_map: {},
 			// leaflet base markers
 			_baseMarkers: [],
 			// zoom level up to which (<) base markers are displayed on the map
@@ -13,6 +16,7 @@
 		};
 		constructor (map: any, options: IAggregatorOptions) {
 			if (options) {
+				this._private._map = map;
 				this._private._baseZoom = options.baseZoom || this._private._baseZoom;
 				this._private._windowSize = options.windowSize || this._private._windowSize;
 			}
@@ -31,7 +35,7 @@
 				return -1;
 			}
  
-marker.addTo(map);
+marker.addTo(this._private._map);
 			
 			// add new marker
 			this._private._baseMarkers.push(marker);

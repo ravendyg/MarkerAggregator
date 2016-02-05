@@ -33,6 +33,7 @@ var test: IAggregator;
         L.tileLayer.provider('OpenStreetMap.HOT').addTo(map);
         
         (function(){
+            // this part can be anything, just should produce some coordinates for test markers 
             var promise = new Promise ( (resolve, reject) => {
                 ajaxGet(url, res => {
                     if (res.responseText === 'call later') {
@@ -49,11 +50,8 @@ var test: IAggregator;
                 });            
             });
             return promise;        
-        })().then( () => {
-            console.log(points);
-            
+        })().then( () => {            
             // instantiate aggregator
-            // don't know hot to handle this typescript error suggestion
             test = new MarkerAggregator(map, {});
             
             for (var i=0; i<points.length; i++) {  
