@@ -30,7 +30,9 @@ var test: IAggregator;
         
         for (var i=0; i<points.length; i++) {  
             test.addMarker({lat: points[i].lat, lng: points[i].lng});
-        } 
+        }
+        
+        test.start();
             
 // console.log(test.getBaseMarkers());
     

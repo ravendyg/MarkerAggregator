@@ -7,6 +7,7 @@ interface Ilatlng {
 
 interface IAggregatorOptions {
 	baseZoom?: number,
+	minZoom?: number,
 	baseWindowSize?: number,
 	zoomStep?: number
 }
@@ -14,6 +15,14 @@ interface IAggregatorOptions {
 interface IAggregator {
 	addMarker (marker: any): number;
 	getBaseMarkers (): any [];
+	start (): void;
+	stop (): void;
+}
+
+interface IMap {
+	getZoom (): number,
+	on (event: string, callback: () => void),
+	removeLayer (layer: any)
 }
 
 declare var MarkerAggregator: {
