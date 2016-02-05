@@ -2,3 +2,4 @@
 
 declare var L: any;
 declare var Promise: any;
+declare var points: any [];

@@ -7,7 +7,8 @@ interface Ilatlng {
 
 interface IAggregatorOptions {
 	baseZoom?: number,
-	windowSize?: number
+	windowSize?: number,
+	zoomStep?: number
 }
 
 interface IAggregator {
