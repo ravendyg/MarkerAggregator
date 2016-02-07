@@ -8,21 +8,21 @@
             // leaflet base markers
             this._baseMarkers = [];
             // leaflet composite markers
-            this._compositeMarkers = [];
-            // coords, comments, etc. of base markers
-            this._baseMarkersData = [];
-            // coords, comments, etc. of composite markers
-            this._compositeMarkersData = [];
+            this._compositeMarkers = {};
+            // // coords, comments, etc. of base markers
+            // private _baseMarkersData = [];
+            // // coords, comments, etc. of composite markers
+            // private _compositeMarkersData = [];
             // zoom level up to which (>=) base markers are displayed on the map
             this._baseZoom = 15;
             // zoom level below which (<=) new markera are not created 
             this._minZoom = 7;
             // how much should zoom change to trigger markers change
-            this._zoomStep = 2;
+            this._zoomStep = 1;
             // size of the window to combine base markers at _baseZoom in degrees
             this._baseWindowSize = 0.005;
-            // refference center of the aggregator, calculated at first rendering
-            this._center = null;
+            // refference easter and southern marker of the aggregator
+            this._eastSouth = null;
             // marker internal id
             this._id = 0;
             this._zoomLevels = {};
@@ -36,7 +36,7 @@
             }
             for (var j = this._baseZoom - this._zoomStep; j >= this._minZoom; j -= this._zoomStep) {
                 this._zoomLevels['' + j] = {
-                    windowSize: this._baseWindowSize * Math.pow(1.5, this._baseZoom - j),
+                    windowSize: this._baseWindowSize * Math.pow(1.7, this._baseZoom - j),
                     markers: {}
                 };
             }
@@ -56,13 +56,51 @@
                 this._currentZoomLevel = this._baseZoom - Math.floor((this._baseZoom - mapZoom) / 2) * 2;
             }
         };
+        MarkerAggregator.prototype.createCompositeMarkers = function (baseMarkerRefLink) {
+            // apply changes to corresponding composite markers
+            var latIndex, lngIndex;
+            var compositeMarkerRef;
+            // for every zoom level
+            for (var j = this._baseZoom - this._zoomStep; j >= this._minZoom; j -= this._zoomStep) {
+                // calculate composite marker's position
+                latIndex = Math.floor((baseMarkerRefLink.getLatLng().lat - this._eastSouth.lat) / this._zoomLevels['' + j].windowSize);
+                lngIndex = Math.floor((baseMarkerRefLink.getLatLng().lng - this._eastSouth.lng) / this._zoomLevels['' + j].windowSize);
+                if (!this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex] ||
+                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].baseMarkers.length === 0) {
+                    compositeMarkerRef = L.marker([baseMarkerRefLink.getLatLng().lat, baseMarkerRefLink.getLatLng().lng]);
+                    // first marker in this cell
+                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex] = {
+                        marker: compositeMarkerRef,
+                        baseMarkers: [baseMarkerRefLink]
+                    };
+                }
+                else {
+                    // save parameters of the old composite marker
+                    var counter = this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].baseMarkers.length;
+                    var oldLat = this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].marker.getLatLng().lat, oldLng = this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].marker.getLatLng().lng;
+                    // remove it from the map
+                    this._map.removeLayer(this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].marker);
+                    // insert new composite marker
+                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].marker = compositeMarkerRef =
+                        L.marker([(baseMarkerRefLink.getLatLng().lat + oldLat * counter) / (counter + 1),
+                            (baseMarkerRefLink.getLatLng().lng + oldLng * counter) / (counter + 1)
+                        ]);
+                    // reference to the base marker
+                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].baseMarkers.push(baseMarkerRefLink);
+                }
+                // check whether it's time to display current composite marker
+                if (j === this._currentZoomLevel) {
+                    compositeMarkerRef.addTo(this._map);
+                }
+            }
+        };
         /*** add new leaflet marker to the aggregator
          * @marker - leaflet marker object
          * @return - number of base markers if successful, -1 if not
+         * because it uses eastern-southern point as a reference, it's better to start adding markers from
+         * the most easter and most southern markers to prevent general recalculation
         */
         MarkerAggregator.prototype.addMarker = function (coords) {
-            var self = this;
-            // var marker;	// leaflet marker
             var localCoords = { lat: 0, lng: 0 };
             // read coordinates 
             if (Array.isArray(coords) && coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
@@ -76,59 +114,64 @@
             else {
                 return -1;
             }
-            // create record?
-            this._baseMarkersData.push({
-                lat: coords[0],
-                lng: coords[1],
-                id: ++this._id
-            });
-            // calculate center using the first one
-            if (!this._center && this._baseMarkersData.length) {
-                this._center = {
-                    lat: localCoords.lat,
-                    lng: localCoords.lng
-                };
-            }
             // create base marker
             var baseMarkerRef = L.marker([localCoords.lat, localCoords.lng]);
+            baseMarkerRef.aId = ++this._id;
             this._baseMarkers.push(baseMarkerRef);
-            console.log(baseMarkerRef);
-            // apply changes to corresponding composite markers
-            var latIndex, lngIndex;
-            for (var j = this._baseZoom - this._zoomStep; j >= this._minZoom; j -= this._zoomStep) {
-                // calculate composite marker's position
-                latIndex = Math.floor((coords.lat - this._center.lat) / this._zoomLevels['' + j].windowSize);
-                lngIndex = Math.floor((coords.lat - this._center.lat) / this._zoomLevels['' + j].windowSize);
-                if (!this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex] ||
-                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].counter === 0) {
-                    // first marker in this cell
-                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex] = {
-                        marker: L.marker([baseMarkerRef.getLatLng().lat, baseMarkerRef.getLatLng().lng]),
-                        counter: 1,
-                        baseMarkers: [baseMarkerRef]
+            var basePointShift = false;
+            // calculate center using the first one
+            if (!this._eastSouth) {
+                this._eastSouth = {
+                    lat: localCoords.lat - 0.00001,
+                    lng: localCoords.lng + 0.00001
+                };
+            }
+            else if (this._eastSouth.lat >= localCoords.lat) {
+                // new base point
+                this._eastSouth.lat = localCoords.lat - 0.00001;
+                basePointShift = true;
+            }
+            else if (this._eastSouth.lng <= localCoords.lng) {
+                // -//-
+                this._eastSouth.lng = localCoords.lng + 0.00001;
+                basePointShift = true;
+            }
+            if (basePointShift) {
+                // recalculate everything
+                // remove composite markers
+                for (var j = this._baseZoom - this._zoomStep; j >= this._minZoom; j -= this._zoomStep) {
+                    // markers on the current zoom layer (currently displayed) from the map
+                    if (j === this._currentZoomLevel) {
+                        for (var k in this._zoomLevels['' + j].markers) {
+                            this._map.removeLayer(this._zoomLevels['' + j].markers[k].marker);
+                        }
+                    }
+                    // from _zoomLevels
+                    this._zoomLevels['' + j] = {
+                        windowSize: this._baseWindowSize * Math.pow(1.7, this._baseZoom - j),
+                        markers: {}
                     };
                 }
-                else {
-                    var counter = this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].counter;
-                    var oldLat = this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].marker.getLatLng().lat, oldLng = this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].marker.getLatLng().lng;
-                    self._map.removeLayer(this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].marker);
-                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].marker =
-                        L.marker([(baseMarkerRef.getLatLng().lat + oldLat * counter) / (counter + 1),
-                            (baseMarkerRef.getLatLng().lng + oldLng * counter) / (counter + 1)
-                        ]);
-                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].baseMarkers.push(baseMarkerRef);
-                    this._zoomLevels['' + j].markers[latIndex + '|' + lngIndex].counter++;
+                // remove links to them from base markers
+                // for every existing base marker recalculate composite
+                for (var j = 0; j < this._baseMarkers.length; j++) {
+                    this.createCompositeMarkers(this._baseMarkers[j]);
                 }
             }
-            // marker.addTo(this._map);
-            // add new marker
-            // this._baseMarkers.push(marker);
-            // return counter
-            return this._id;
+            else {
+                // just add composite markers including given base marker
+                this.createCompositeMarkers(baseMarkerRef);
+            }
+            if (this._currentZoomLevel === this._baseZoom) {
+                // display base marker
+                baseMarkerRef.addTo(this._map);
+            }
+            // return new base marker id
+            return baseMarkerRef.aId;
         };
         /*** return base markers */
         MarkerAggregator.prototype.getBaseMarkers = function () {
-            return this._baseMarkersData;
+            return this._baseMarkers;
         };
         /*** start listen for map's zoom change */
         MarkerAggregator.prototype.start = function () {
