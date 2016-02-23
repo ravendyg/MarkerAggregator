@@ -98,12 +98,12 @@ class D2tree implements ID2Tree {
             direction = 'LeftNode';
         }
         
-        if (!parentNode['get'+direction]()) {
+        if (!parentNode[`get${direction}`]()) {
             // branch is empty
-            parentNode['set'+direction](childNode);
-            parentNode['get'+direction]().setColor(!parentNode.getColor());
+            parentNode[`set${direction}`](childNode);
+            parentNode[`get${direction}`]().setColor(!parentNode.getColor());
         } else {
-            this._place(parentNode['get'+direction](), childNode);
+            this._place(parentNode[`get${direction}`](), childNode);
         }
     }
     
@@ -180,13 +180,13 @@ class D2tree implements ID2Tree {
             
             if (dist[now] < dist.leader) {
                 dist.leader = dist[now];
-                tempLeader = beingChecked['get'+now+'Node']();
-            } else if (beingChecked && beingChecked['get'+later+'Node']()) {
+                tempLeader = beingChecked[`get${now}Node`]();
+            } else if (beingChecked && beingChecked[`get${later}Node`]()) {
                 // haven't got closer -> possibility that there is one closer on the other branch; if it's not null
-                notChecked.push(beingChecked['get'+later+'Node']());
+                notChecked.push(beingChecked[`get${later}Node`]());
             }
             // move deeper
-            beingChecked = beingChecked['get'+now+'Node']();
+            beingChecked = beingChecked[`get${now}Node`]();
         }
         
         // iterate while there is where to go deeper or where to return on the other branches
