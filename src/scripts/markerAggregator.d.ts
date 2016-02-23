@@ -13,10 +13,10 @@ interface IAggregatorOptions {
 }
 
 interface IAggregator {
-	addMarker (marker: any): number;
+	addMarker (markerCoords: any): number;
 	getBaseMarkers (): any [];
-	start (): void;
-	stop (): void;
+	// start (): void;
+	// stop (): void;
 }
 
 interface IMap {
@@ -27,4 +27,29 @@ interface IMap {
 
 declare var MarkerAggregator: {
 	new (map: any, options: IAggregatorOptions): IAggregator;
+}
+
+interface INode {
+    setLeftNode (node: INode): INode;
+    setRightNode (node: INode): INode;
+    getLeftNode (): INode;
+    getRightNode (): INode;
+    setColor (color: boolean);
+    getColor (): boolean;
+    getLat (): number;
+    getLng (): number;
+    getValue (): any; 
+}
+
+interface ID2Tree {
+    addLeaf (coords: any, value: any): void;
+    traverse (): INode [];
+    getRoot (): INode;
+    findNearest (coords: Ilatlng, radius: number): markerContent;
+}
+
+declare type markerContent = any;
+
+interface IMarker {
+    aId?: number;
 }

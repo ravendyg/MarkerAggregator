@@ -29,7 +29,7 @@ var gulp = require('gulp'),
 // gulp gulp-sass less-plugin-clean-css gulp-autoprefixer gulp-minify-css gulp-jshint jshint-stylish gulp-uglify gulp-usemin gulp-imagemin gulp-cache gulp-rev del gulp-typescript gulp-sourcemaps
 // watch
 gulp.task('watch', function () {
-   gulp.watch('src/scripts/**/*.ts', ['compileTs']);
+   gulp.watch('src/scripts/app.ts', ['compileTs']);
    gulp.watch('src/styles/*.sass', ['styles']);
    gulp.watch('src/scripts/*.js', ['jshint']);
 });
@@ -47,7 +47,7 @@ gulp.task('styles', function () {
 
 // compileTS
 gulp.task('compileTs', function () {
-    var tsResult = gulp.src('src/scripts/*.ts')
+    var tsResult = gulp.src('src/scripts/app.ts')
     .pipe(sourcemaps.init())
     .pipe(ts({
         target: 'ES5',
