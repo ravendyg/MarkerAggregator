@@ -200,7 +200,7 @@ class D2tree implements ID2Tree {
                 dist: dist.leader,
                 node: tempLeader
             }
-        } else return {};
+        } else return null;
         
         // test._baseMarkersTree._calculateDistance({lat:54.9830,lng:82.8722},0.001)
     }
