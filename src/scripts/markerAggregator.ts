@@ -1,13 +1,12 @@
-/// <reference path="markerAggregator.d.ts" />
-/// <reference path="others.d.ts" />
+/// <reference path="./../../typings/tsd.d.ts" />
 /* global L */
 
-import D2tree from './D2tree.ts';
+import {D2tree} from './D2tree.ts';
 
 // (function(context){
 // 'use strict';
 	
-export default class MarkerAggregator implements IAggregator {
+export class MarkerAggregator implements IAggregator {
 
 		// container with private vars
 		private _map: IMap;
@@ -15,42 +14,48 @@ export default class MarkerAggregator implements IAggregator {
 		private _baseMarkers: any [];
         private _baseMarkersTree: ID2Tree;
 		// leaflet composite markers
-		private _compositeMarkers = {};
-		// // coords, comments, etc. of base markers
+		// private _compositeMarkers = {};
+		// coords, comments, etc. of base markers
 		// private _baseMarkersData = [];
 		// // coords, comments, etc. of composite markers
 		// private _compositeMarkersData = [];
 		// zoom level up to which (>=) base markers are displayed on the map
-		private _baseZoom = 15;
+		private _baseZoom: number;
 		// zoom level below which (<=) new markera are not created 
-		private _minZoom = 7;
+		private _minZoom: number;
 		// how much should zoom change to trigger markers change
-		private _zoomStep = 1;
+		private _zoomStep: number;
 		// current zoom level
-		private _currentZoomLevel;
+		private _currentZoomLevel: any;
 		// size of the window to combine base markers at _baseZoom in degrees
-		private _baseWindowSize = 0.005;
+		private _baseWindowSize: number;
 		// refference easter and southern marker of the aggregator
-		private _eastSouth = null;
+		private _eastSouth: any;
 		// marker internal id
-		private _id = 0;
+		private _id: number;
 		
-		private _zoomLevels = {};
+		private _zoomLevels: any;
 			
 		constructor (map: IMap, options: IAggregatorOptions) {
+            
             // assume L to be a global var
             if (!L.version) console.error('Can\'t find Leaflet library');
 			if (options) {
 				this._map = map;
-				this._baseZoom = options.baseZoom || this._baseZoom;
-				this._zoomStep = options.zoomStep || this._zoomStep;
-				this._minZoom = options.minZoom || this._minZoom;
+				this._baseZoom = options.baseZoom || 15;
+				this._zoomStep = options.zoomStep || 1;
+				this._minZoom = options.minZoom || 7;
 				this._minZoom = this._baseZoom  - (this._baseZoom - this._minZoom) / 2 * 2;
-				this._baseWindowSize = options.baseWindowSize || this._baseWindowSize;
+				this._baseWindowSize = options.baseWindowSize || 0.005;
 			}
+            
+            this._id = 0;
+            this._eastSouth = null;
             
             this._baseMarkers = [];
             this._baseMarkersTree = null;
+            
+            this._zoomLevels = {};
  
 			
 			for (var j=this._baseZoom-this._zoomStep; j>=this._minZoom; j-=this._zoomStep) {
@@ -59,10 +64,8 @@ export default class MarkerAggregator implements IAggregator {
 					markers: {}
 				};
 			}
-// console.log(this._zoomLevels);
 			
 			this._setCurrentZoomLevel();
-// console.log(this._currentZoomLevel);
 		}
 		
         private _setCurrentZoomLevel () {
@@ -74,7 +77,7 @@ export default class MarkerAggregator implements IAggregator {
 			}
 		}
         
-		private _createCompositeMarkers (coords: Ilatlng, baseMarkerLink: IMarker) {
+		private _createCompositeMarkers (coords: PointType, baseMarkerLink: IMarker) {
 			// apply changes to corresponding composite markers
 			var latIndex: number, lngIndex: number;
 			var compositeMarkerRef: any;
@@ -222,7 +225,7 @@ console.log('inside start');
 console.log('inside rerender');
 				// store old zoom level and calculate new one
 				var oldZoom = self._currentZoomLevel;
-				var i;
+				// var i;
 				self._setCurrentZoomLevel();
 console.log(oldZoom, self._currentZoomLevel);
 				// if (oldZoom !== self._currentZoomLevel) {

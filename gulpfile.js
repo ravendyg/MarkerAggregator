@@ -1,10 +1,9 @@
 var gulp = require('gulp'),
-    sass = require('gulp-sass'),
+    less = require('gulp-less'),
     lessPluginCleanCSS = require('less-plugin-clean-css'),
     cleancss = new lessPluginCleanCSS({advanced: true}),
     autoprefixer = require('gulp-autoprefixer'),
-    // minifycss = require('gulp-minify-css'),
-    minifycss = require('gulp-cssnano'),
+    minifycss = require('gulp-minify-css'),
     // // eslint = require('gulp-eslint'),
     jshint = require('gulp-jshint'),
     stylish = require('jshint-stylish'),
@@ -29,57 +28,27 @@ var gulp = require('gulp'),
 // gulp gulp-sass less-plugin-clean-css gulp-autoprefixer gulp-minify-css gulp-jshint jshint-stylish gulp-uglify gulp-usemin gulp-imagemin gulp-cache gulp-rev del gulp-typescript gulp-sourcemaps
 // watch
 gulp.task('watch', function () {
-   gulp.watch('src/scripts/app.ts', ['compileTs']);
-   gulp.watch('src/styles/*.sass', ['styles']);
-   gulp.watch('src/scripts/*.js', ['jshint']);
+//    gulp.watch('src/scripts/app.ts', ['compileTs']);
+   gulp.watch('src/styles/*.less', ['styles']);
+//    gulp.watch('src/scripts/*.js', ['jshint']);
 });
    
 // styles
 gulp.task('styles', function () {
-    console.log('watch');
 	gulp.src('src/styles/*.less')
-		.pipe(sass({plugins: [cleancss]}).on('error', function (err) {
+		.pipe(less({plugins: [cleancss]}).on('error', function (err) {
 			console.dir(err);
 		}))
 		.pipe(autoprefixer({browsers: ['last 2 versions']}))
-		.pipe(gulp.dest('src/styles'));		
+		.pipe(gulp.dest('build/styles'));		
 }); 
 
-// compileTS
-gulp.task('compileTs', function () {
-    var tsResult = gulp.src('src/scripts/app.ts')
-    .pipe(sourcemaps.init())
-    .pipe(ts({
-        target: 'ES5',
-        declarationFiles: false,
-        noExternalResolve: true,
-        removeComments: false,
-    }));
-		
-	tsResult.dts.pipe(gulp.dest('src/scripts'));
-	return tsResult.js
-				.pipe(sourcemaps.write('/maps'))
-				.pipe(gulp.dest('src/scripts'));
-});
-
-// jshint
-gulp.task('jshint', function () {
-    return gulp.src(['src/scripts/app.js'])
-        .pipe(jshint())
-        .pipe(jshint.reporter(stylish));
-});
-
-// clean for production
-gulp.task('clean', function () {
-   return del(['build']); 
-});
-
-// copy desktop version
-gulp.task('copy', ['clean'], function () {
-    gulp.src('src/index.html')
-        .pipe(processhtml())
-        .pipe(gulp.dest('build/'));
-})
+// // copy desktop version
+// gulp.task('copy', ['clean'], function () {
+//     gulp.src('src/index.html')
+//         .pipe(processhtml())
+//         .pipe(gulp.dest('build/'));
+// })
 
 // images desktop
 gulp.task('imagemin', function () {
@@ -90,18 +59,17 @@ gulp.task('imagemin', function () {
 });
 
 // minimize & uglify
-gulp.task('usemin', ['jshint'], function () {
-    gulp.src('src/scripts/*.js')
+gulp.task('usemin', function () {
+    gulp.src('src/scripts/vendor*.js')
             .pipe(uglify())
             .pipe(rename(function (path) {
                 path.basename += '.min';
             }))
-            .pipe(gulp.dest('build/scripts'));
-    gulp.src('src/styles/*.css')
-            .pipe(gulp.dest('build/styles'));
 });
 
 // build
-gulp.task('build', ['clean'], function () {
-    gulp.start('usemin', 'imagemin', 'copy');
+gulp.task('build', function () {
+    gulp.start('usemin', 'imagemin');
+    gulp.src(`src/index.html`)
+        .pipe(gulp.dest(`build/index.html`));
 });

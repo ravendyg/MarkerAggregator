@@ -1,14 +1,15 @@
-/// <reference path="markerAggregator.d.ts" />
+/// <reference path="./../../typings/tsd.d.ts" />
 
 class Node implements INode {
     private _latKey: number;
     private _lngKey: number;
+    // leaflet marker and nay data that need to be passed through
     private _content: markerContent;
     private _leftNode: Node;
     private _rightNode: Node;
     private _color: boolean;
     
-    constructor (coords: any, content: any) {
+    constructor (coords: any, marker: any) {
         // coords either Ilatlng or [lat, lng]
         // read coordinates 
         if (Array.isArray(coords) && coords.length >= 2
@@ -31,21 +32,23 @@ class Node implements INode {
         // by default red
         this._color = true;
         
-        this._content = content;
+        this._content = {
+            marker
+        };
     }
     
-    public setLeftNode (node: Node): Node {
+    public setLeftNode (node: Node): INode {
         this._leftNode = node;
         return this._leftNode;
     }
-    public setRightNode (node: Node): Node {
+    public setRightNode (node: Node): INode {
         this._rightNode = node;
         return this._rightNode;
     }   
-    public getLeftNode (): Node {
+    public getLeftNode (): INode {
         return this._leftNode;
     }
-    public getRightNode (): Node {
+    public getRightNode (): INode {
         return this._rightNode;
     }
     public setColor (color: boolean) {
@@ -63,22 +66,19 @@ class Node implements INode {
         return this._lngKey;
     }
     
-    public getValue (): any {
+    public getContent (): any {
         return this._content;
     }
 }
 
-export default /**
- * 2Dtree
- */
-class D2tree implements ID2Tree {
+export class D2tree implements ID2Tree {
     private _root: Node;
     
     constructor (coords: any, content: markerContent) {
         this._root = new Node(coords, content);
     }
     
-    private _place (parentNode: Node, childNode: Node) {
+    private _place (parentNode: any, childNode: any) {
         var method: string;
         var direction: string;
         
@@ -107,26 +107,26 @@ class D2tree implements ID2Tree {
         }
     }
     
-    private _calculateDistance (marker: Node, coords: Ilatlng): number {
+    private _calculateDistance (marker: INode, coords: PointType): number {
         // if this branch doesn't exist
         if (!marker) return Infinity;
         return Math.sqrt(Math.pow(marker.getLat() - coords.lat, 2) + Math.pow(marker.getLng() - coords.lng, 2));
     }
     
-    public addLeaf (coords: any, value: any) {
+    public addLeaf (coords: any, value: any): void {
         var newLeaf = new Node(coords, value);
         
         this._place(this._root, newLeaf);
     }
     
     /** return array of all nodes in top to bottom, left to right order */
-    public traverse ():Node [] {
-        var output: Node [];
+    public traverse (): INode [] {
+        var output: INode [];
         output = [this._root];
         // this._root.getValue()[0].bindLabel(this._root.getValue()[1]+': -1', { noHide: true });
         
         var i = 0;
-        var tempNode: Node;
+        var tempNode: INode;
         while (i < output.length) {
             if (output[i]) {
                 tempNode = output[i].getLeftNode();
@@ -151,13 +151,13 @@ class D2tree implements ID2Tree {
         return this._root;
     }
     
-    public findNearest (coords: Ilatlng, radius: number): markerContent {
+    public findNearest (coords: PointType, radius: number): markerContent {
         var self = this;
         var tempLeader: Node;
-        var beingChecked: Node = this._root;
+        var beingChecked: any = this._root;
         var notChecked: Node [] = [];
         var now: string, later: string;
-        var dist = {
+        var dist: any = {
             Left: -1,
             Right: -1,
             leader: -1

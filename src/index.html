@@ -1,42 +1,32 @@
 <!DOCTYPE html>
 <html lang="ru">
 
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        
-        <title></title>  
-        <link rel="icon" type="image/png" href="favicon.ico" />  
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     
+    <title></title>  
+    <link rel="icon" type="image/png" href="favicon.ico" />  
+ 
+
+    <link href="styles/leaflet.css" rel="stylesheet">
+    <link href="styles/leaflet.label.css" rel="stylesheet">
+    <link href="styles/mystyles.css" rel="stylesheet">
+  
+</head>
+
+<body>   
     
-        <link href="styles/leaflet.css" rel="stylesheet">
-        <link href="styles/leaflet.label.css" rel="stylesheet">
-        <link href="styles/mystyles.css" rel="stylesheet">
+    <div id="map"></div>
     
-    </head>
+    <script src="scripts/leaflet.min.js"></script>
+    <script src="scripts/leaflet-providers.min.js"></script>
+    <script src="scripts/leaflet.label.min.js"></script>
     
-    <body>   
-        
-        <div id="map"></div>
-        
-        <div id="test">got it</div>
-        
-        <!-- build:js scripts/leaflet.min.js -->
-        <script src="scripts/leaflet.js"></script>
-        <!-- /build -->   
-        <!-- build:js scripts/leaflet-providers.min.js -->
-        <script src="scripts/leaflet-providers.js"></script>
-        <!-- /build -->   
-        <!-- build:js scripts/leaflet.label.min.js -->
-        <script src="scripts/leaflet.label.js"></script>
-        <!-- /build -->   
-        <!-- build:js scripts/markerAgregator.min.js -->
-        <!--<script src="scripts/markerAggregator.js"></script>-->
-        <!-- /build -->
-        <script src="scripts/nsk_test.js"></script>   
-        <!-- build:js scripts/app.min.js -->
-        <script src="scripts/app.js"></script>
-        <!-- /build -->   
-    </body>
+    <script src="scripts/nsk_test.js"></script>
+    
+    <script src="scripts/markerAgregator.min.js"></script>
+    <script src="scripts/app.min.js"></script>
+</body>
 </html>
