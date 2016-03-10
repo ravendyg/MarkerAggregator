@@ -10,7 +10,7 @@ declare type PointType = {
 }
 
 declare type ZoomLevelType = {
-    compositeMarkersTree: ID2Tree,
+    compositeMarkersTree: ID2Tree<MarkerType>,
     // markers: any,
     windowSize: number
 }

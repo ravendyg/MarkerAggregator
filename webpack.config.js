@@ -8,10 +8,11 @@ console.log('development' ? "source-map" : null);
 
 module.exports = {
     entry: {
-        app: "./src/scripts/app.ts"   
+        app: "./src/scripts/app.ts",
+        test: "./src/test-specs/root_specs.ts"
     },
     output: {
-        path: __dirname + '/build/scripts/',
+        path: __dirname + '/build/scripts',
         filename: "[name].min.js",
         library: "[name]"
     },
@@ -26,7 +27,7 @@ module.exports = {
             { test: /\.tsx?$/, loader: 'babel!ts-loader' }
         ]
     },
-    // plugins: NODE_ENV === 'development' ? [] : [
+    plugins: NODE_ENV === 'development' ? [] : [
     //     new webpack.DefinePlugin({
     //         'process.env': {
     //         'NODE_ENV': JSON.stringify('production')
@@ -46,5 +47,5 @@ module.exports = {
     //             drop_console: true
     //         }            
     //     }),
-    // ]
+    ]
 }

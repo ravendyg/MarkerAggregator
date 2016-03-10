@@ -12,7 +12,7 @@ export class MarkerAggregator implements IAggregator {
 		private _map: IMap;
 		// leaflet base markers
 		// private _baseMarkers: MarkerType [];
-        private _baseMarkersTree: ID2Tree;
+        private _baseMarkersTree: ID2Tree<MarkerType>;
 		// leaflet composite markers
 		// private _compositeMarkers = {};
 		// coords, comments, etc. of base markers
@@ -37,7 +37,7 @@ export class MarkerAggregator implements IAggregator {
 		private _zoomLevels: {
             windowSize: number,
             // markers: any,
-            compositeMarkersTree: ID2Tree
+            compositeMarkersTree: ID2Tree<MarkerType>
         } [];
 			
 		constructor (map: IMap, options: IAggregatorOptions) {

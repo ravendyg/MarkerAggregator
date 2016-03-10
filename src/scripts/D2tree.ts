@@ -9,7 +9,7 @@ class Node implements INode {
     private _rightNode: Node;
     private _color: boolean;
     
-    constructor (coords: any, marker: any) {
+    constructor (coords: any, content: any) {
         // coords either Ilatlng or [lat, lng]
         // read coordinates 
         if (Array.isArray(coords) && coords.length >= 2
@@ -32,7 +32,7 @@ class Node implements INode {
         // by default red
         this._color = true;
         
-        this._content = marker;
+        this._content = content;
     }
     
     public setLeftNode (node: Node): INode {
@@ -64,15 +64,15 @@ class Node implements INode {
         return this._lngKey;
     }
     
-    public getContent (): any {
+    public getContent <T>(): T {
         return this._content;
     }
 }
 
-export class D2tree implements ID2Tree {
+export class D2tree <T> implements ID2Tree<T> {
     private _root: Node;
     
-    constructor (coords: any, content: any) {
+    constructor (coords: any, content: T) {
         this._root = new Node(coords, content);
     }
     
@@ -123,7 +123,7 @@ export class D2tree implements ID2Tree {
     }
     
     /** return array of content! of all nodes in top to bottom, left to right order */
-    public traverse (): MarkerType [] {
+    public traverse <T>(): T [] {
         var output: INode [];
         output = [this._root];
         // this._root.getValue()[0].bindLabel(this._root.getValue()[1]+': -1', { noHide: true });
