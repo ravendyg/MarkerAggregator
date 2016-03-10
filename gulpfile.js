@@ -60,16 +60,19 @@ gulp.task('imagemin', function () {
 
 // minimize & uglify
 gulp.task('usemin', function () {
-    gulp.src('src/scripts/vendor*.js')
-            .pipe(uglify())
-            .pipe(rename(function (path) {
-                path.basename += '.min';
+    return gulp.src('src/index.html')
+            .pipe(usemin({
+                js: [uglify()]
             }))
+            .pipe(gulp.dest('build/'));
+});
+
+gulp.task(`clean`, function () {
+    del(['build/index.html']);
+    return del(['build/scripts/vendor.js']); 
 });
 
 // build
-gulp.task('build', function () {
+gulp.task('build', ['clean'], function () {
     gulp.start('usemin', 'imagemin');
-    gulp.src(`src/index.html`)
-        .pipe(gulp.dest(`build/index.html`));
 });

@@ -1,4 +1,6 @@
-declare type markerContent = any;
+declare type MarkerContentType = {
+    marker: any;
+};
 
 // point on a map
 declare type PointType = {
@@ -9,6 +11,16 @@ declare type PointType = {
 
 declare type ZoomLevelType = {
     compositeMarkersTree: ID2Tree,
-    markers: any,
+    // markers: any,
     windowSize: number
+}
+
+declare type NearestType = {
+    content: any,
+    dist: number
+}
+
+declare type MarkerType = {
+    marker: ILMarker,
+    aId?: number
 }

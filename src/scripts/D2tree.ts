@@ -3,8 +3,8 @@
 class Node implements INode {
     private _latKey: number;
     private _lngKey: number;
-    // leaflet marker and nay data that need to be passed through
-    private _content: markerContent;
+    // leaflet marker and any data that need to be passed through
+    private _content: any;
     private _leftNode: Node;
     private _rightNode: Node;
     private _color: boolean;
@@ -32,9 +32,7 @@ class Node implements INode {
         // by default red
         this._color = true;
         
-        this._content = {
-            marker
-        };
+        this._content = marker;
     }
     
     public setLeftNode (node: Node): INode {
@@ -74,7 +72,7 @@ class Node implements INode {
 export class D2tree implements ID2Tree {
     private _root: Node;
     
-    constructor (coords: any, content: markerContent) {
+    constructor (coords: any, content: any) {
         this._root = new Node(coords, content);
     }
     
@@ -110,17 +108,22 @@ export class D2tree implements ID2Tree {
     private _calculateDistance (marker: INode, coords: PointType): number {
         // if this branch doesn't exist
         if (!marker) return Infinity;
-        return Math.sqrt(Math.pow(marker.getLat() - coords.lat, 2) + Math.pow(marker.getLng() - coords.lng, 2));
+        // else calculate
+        return Math.sqrt(
+            Math.pow(marker.getLat() - coords.lat, 2) + 
+            Math.pow(marker.getLng() - coords.lng, 2)
+        );
     }
     
-    public addLeaf (coords: any, value: any): void {
-        var newLeaf = new Node(coords, value);
-        
+    public addLeaf (coords: any, content: any): void {
+        // create new Node
+        var newLeaf = new Node(coords, content);
+        // and insert it
         this._place(this._root, newLeaf);
     }
     
-    /** return array of all nodes in top to bottom, left to right order */
-    public traverse (): INode [] {
+    /** return array of content! of all nodes in top to bottom, left to right order */
+    public traverse (): MarkerType [] {
         var output: INode [];
         output = [this._root];
         // this._root.getValue()[0].bindLabel(this._root.getValue()[1]+': -1', { noHide: true });
@@ -144,20 +147,23 @@ export class D2tree implements ID2Tree {
             i++;   
         }
         
-        return output;
+        return output.map(e => e.getContent());
     }
     
     public getRoot (): Node {
         return this._root;
     }
     
-    public findNearest (coords: PointType, radius: number): markerContent {
+    /*** find nearest node to the specified point
+     * @return : {content: it's content, dist: distance  in [deg]}
+    */
+    public findNearest (coords: PointType): NearestType {
         var self = this;
-        var tempLeader: Node;
-        var beingChecked: any = this._root;
-        var notChecked: Node [] = [];
+        var tempLeader: INode;
+        var beingChecked: INode = this._root;
+        var notChecked: INode [] = [];
         var now: string, later: string;
-        var dist: any = {
+        var dist = {
             Left: -1,
             Right: -1,
             leader: -1
@@ -171,22 +177,42 @@ export class D2tree implements ID2Tree {
             dist.Left = self._calculateDistance(beingChecked.getLeftNode(), coords);
             dist.Right = self._calculateDistance(beingChecked.getRightNode(), coords);
             if (dist.Left < dist.Right) {
-                now = 'Left';
-                later = 'Right'; 
+                // now = 'Left';
+                // later = 'Right';
+                
+                if (dist.Left < dist.leader) {
+                    dist.leader = dist.Left;
+                    tempLeader = beingChecked.getLeftNode();
+                } else if (beingChecked && beingChecked.getRightNode()) {
+                    // haven't got closer -> possibility that there is one closer on the other branch; if it's not null
+                    notChecked.push(beingChecked.getRightNode());
+                }
+                // move deeper
+                beingChecked = beingChecked.getLeftNode(); 
             } else {
-                now = 'Right';
-                later = 'Left';
+                // now = 'Right';
+                // later = 'Left';
+                
+                if (dist.Right < dist.leader) {
+                    dist.leader = dist.Right;
+                    tempLeader = beingChecked.getRightNode();
+                } else if (beingChecked && beingChecked.getLeftNode()) {
+                    // haven't got closer -> possibility that there is one closer on the other branch; if it's not null
+                    notChecked.push(beingChecked.getLeftNode());
+                }
+                // move deeper
+                beingChecked = beingChecked.getRightNode();
             }
             
-            if (dist[now] < dist.leader) {
-                dist.leader = dist[now];
-                tempLeader = beingChecked[`get${now}Node`]();
-            } else if (beingChecked && beingChecked[`get${later}Node`]()) {
-                // haven't got closer -> possibility that there is one closer on the other branch; if it's not null
-                notChecked.push(beingChecked[`get${later}Node`]());
-            }
-            // move deeper
-            beingChecked = beingChecked[`get${now}Node`]();
+            // if (dist[now] < dist.leader) {
+            //     dist.leader = dist[now];
+            //     tempLeader = beingChecked[`get${now}Node`]();
+            // } else if (beingChecked && beingChecked[`get${later}Node`]()) {
+            //     // haven't got closer -> possibility that there is one closer on the other branch; if it's not null
+            //     notChecked.push(beingChecked[`get${later}Node`]());
+            // }
+            // // move deeper
+            // beingChecked = beingChecked[`get${now}Node`]();
         }
         
         // iterate while there is where to go deeper or where to return on the other branches
@@ -195,12 +221,10 @@ export class D2tree implements ID2Tree {
             else beingChecked = notChecked.pop();
         }
         
-        if (dist.leader < radius) {
-            return {
-                dist: dist.leader,
-                node: tempLeader
-            }
-        } else return null;
+        return {
+            dist: dist.leader,
+            content: tempLeader.getContent()
+        }
         
         // test._baseMarkersTree._calculateDistance({lat:54.9830,lng:82.8722},0.001)
     }

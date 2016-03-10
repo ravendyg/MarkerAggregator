@@ -8,13 +8,14 @@ interface IAggregatorOptions {
 interface IAggregator {
 	addMarker (markerCoords: any): number;
 	getBaseMarkers (): any [];
-	// start (): void;
-	// stop (): void;
+	start (): void;
+	stop (): void;
 }
 
 interface IMap {
 	getZoom (): number;
-	on (event: string, callback: () => void): any;
+	on (event: string, callback: () => void, context: any): any;
+    off (event: string, callback: () => void, context: any): any;
 	removeLayer (layer: any): any;
 }
 
@@ -33,11 +34,12 @@ interface INode {
 interface ID2Tree {
     // new (coords: any, marker: any): ID2Tree;
     addLeaf (coords: any, value: any): void;
-    traverse (): INode [];
+    traverse (): MarkerType [];
     getRoot (): INode;
-    findNearest (coords: PointType, radius: number): markerContent;
+    findNearest (coords: PointType): any;
 }
 
-interface IMarker {
-    aId?: number;
+interface ILMarker {
+    getLatLng: () => PointType;
+    addTo: (map: IMap) => ILMarker;
 }
