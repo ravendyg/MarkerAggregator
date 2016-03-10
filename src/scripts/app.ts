@@ -28,8 +28,8 @@ var test: IAggregator;
         // instantiate aggregator
         test = new MarkerAggregator(map, {});
         
-        var tree: ID2Tree<MarkerType> = new D2tree({lat: points[0].lat, lng: points[0].lng},
-                            [L.marker([points[0].lat, points[0].lng]),0]);
+        // var tree: ID2Tree<MarkerType> = new D2tree({lat: points[0].lat, lng: points[0].lng},
+        //                     [L.marker([points[0].lat, points[0].lng]),0]);
 
         // for (var i=1; i < points.length; i++) {
         //     test.addMarker({lat: points[i].lat, lng: points[i].lng});
@@ -60,7 +60,7 @@ var test: IAggregator;
             
 // console.log(test.getBaseMarkers());
 
-        context.tree = tree;   
+        // context.tree = tree;   
         context.test = test; 
         context.map = map;
     });

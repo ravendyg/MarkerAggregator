@@ -109,13 +109,20 @@ export class D2tree <T> implements ID2Tree<T> {
         // if this branch doesn't exist
         if (!marker) return Infinity;
         // else calculate
+console.log(`lat1: ${marker.getLat()}; lat2: ${coords.lat}`);
+console.log(`lng1: ${marker.getLng()}; lng2: ${coords.lng}`);
+console.log(`dist ${Math.sqrt(
+            Math.pow(marker.getLat() - coords.lat, 2) + 
+            Math.pow(marker.getLng() - coords.lng, 2)
+        )}`);
+        
         return Math.sqrt(
             Math.pow(marker.getLat() - coords.lat, 2) + 
             Math.pow(marker.getLng() - coords.lng, 2)
         );
     }
     
-    public addLeaf (coords: any, content: any): void {
+    public addLeaf (coords: any, content: T): void {
         // create new Node
         var newLeaf = new Node(coords, content);
         // and insert it
@@ -123,7 +130,7 @@ export class D2tree <T> implements ID2Tree<T> {
     }
     
     /** return array of content! of all nodes in top to bottom, left to right order */
-    public traverse <T>(): T [] {
+    public traverse (): T [] {
         var output: INode [];
         output = [this._root];
         // this._root.getValue()[0].bindLabel(this._root.getValue()[1]+': -1', { noHide: true });
@@ -157,7 +164,7 @@ export class D2tree <T> implements ID2Tree<T> {
     /*** find nearest node to the specified point
      * @return : {content: it's content, dist: distance  in [deg]}
     */
-    public findNearest (coords: PointType): NearestType {
+    public findNearest (coords: PointType): NearestType<T> {
         var self = this;
         var tempLeader: INode;
         var beingChecked: INode = this._root;

@@ -94,7 +94,7 @@ console.log(j);
 			// apply changes to corresponding composite markers
 			var latIndex: number, lngIndex: number;
 			var compositeMarkerRef: any;
-            var nearest: NearestType;
+            var nearest: NearestType<MarkerType>;
 			// for every zoom level
 			// for (var j=baseZoom; j >= minZoom; j-=zoomStep) {
             for (var j=12; j===12; j++) {
@@ -102,7 +102,7 @@ console.log(j);
                 if (!zoomLevels[j].compositeMarkersTree) {
                     // no composites yet
                     zoomLevels[j].compositeMarkersTree = new D2tree(coords, baseMarker);
-                    baseMarker.marker.addTo(this._map);
+                    baseMarker.marker.bindPopup(JSON.stringify(coords,null,2)).addTo(this._map);
                 } else {
                     // search for the nearest composite on this zoom level
                     // within the radius of windowSize
@@ -123,11 +123,11 @@ console.log(nearest);
     shadowAnchor: [4, 62],  // the same for the shadow
     popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
 });
-baseMarker.marker.setIcon(greenIcon).addTo(this._map);
+baseMarker.marker.setIcon(greenIcon).bindPopup(JSON.stringify(coords,null,2)).addTo(this._map);
                     } else {
                         // if not, create new    
                         zoomLevels[j].compositeMarkersTree.addLeaf(coords, baseMarker);
-                        baseMarker.marker.addTo(this._map);
+                        baseMarker.marker.bindPopup(JSON.stringify(coords,null,2)).addTo(this._map);
                     }
                          
                     

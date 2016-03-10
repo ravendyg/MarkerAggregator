@@ -15,8 +15,8 @@ declare type ZoomLevelType = {
     windowSize: number
 }
 
-declare type NearestType = {
-    content: any,
+declare type NearestType<T>= {
+    content: T,
     dist: number
 }
 

@@ -35,5 +35,15 @@ describe(`test Kd-tree implementation`, () => {
         }
         expect(sum).toBe(0);
     });
+    
+    it(`closest to [6,3] should be m: 7`, () => {
+        expect(testTree.findNearest({lat: 6, lng: 3}).content.m).toBe(7);
+    });
+    it(`closest to [5,3] should be m: 4`, () => {
+        expect(testTree.findNearest({lat: 5, lng: 3}).content.m).toBe(4);
+    });
+    it(`closest to [7,9] should be m: 6`, () => {
+        expect(testTree.findNearest({lat: 7, lng: 9}).content.m).toBe(6);
+    });
         
 })

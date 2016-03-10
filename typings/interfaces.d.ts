@@ -33,14 +33,16 @@ interface INode {
 
 interface ID2Tree <T> {
     // new (coords: any, marker: any): ID2Tree;
-    addLeaf (coords: any, content: any): void;
+    addLeaf (coords: any, content: T): void;
     traverse (): T [];
     getRoot (): INode;
-    findNearest (coords: PointType): any;
+    findNearest (coords: PointType): NearestType<T>;
 }
 
 interface ILMarker {
     getLatLng: () => PointType;
     addTo: (map: IMap) => ILMarker;
+    setIcon: (icon: any) => ILMarker;
+    bindPopup: (text: any) => ILMarker;
     m?: number;
 }
