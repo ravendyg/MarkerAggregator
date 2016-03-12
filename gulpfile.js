@@ -22,7 +22,8 @@ var gulp = require('gulp'),
     del = require('del'),
     // exec = require('gulp-exec'),
     ts = require('gulp-typescript'),
-    sourcemaps = require('gulp-sourcemaps');
+    sourcemaps = require('gulp-sourcemaps'),
+    mocha = require(`gulp-mocha`);
 
 
 // gulp gulp-sass less-plugin-clean-css gulp-autoprefixer gulp-minify-css gulp-jshint jshint-stylish gulp-uglify gulp-usemin gulp-imagemin gulp-cache gulp-rev del gulp-typescript gulp-sourcemaps
@@ -30,7 +31,7 @@ var gulp = require('gulp'),
 gulp.task('watch', function () {
 //    gulp.watch('src/scripts/app.ts', ['compileTs']);
    gulp.watch('src/styles/*.less', ['styles']);
-//    gulp.watch('src/scripts/*.js', ['jshint']);
+   gulp.watch('build/scripts/*.js', ['moveTest']);
 });
    
 // styles
@@ -43,12 +44,18 @@ gulp.task('styles', function () {
 		.pipe(gulp.dest('build/styles'));		
 }); 
 
-// // copy desktop version
-// gulp.task('copy', ['clean'], function () {
-//     gulp.src('src/index.html')
-//         .pipe(processhtml())
-//         .pipe(gulp.dest('build/'));
-// })
+// remove test from build
+gulp.task(`cleanTest`, [`moveTest`], function () {
+    return del('build/scripts/test*');
+});
+// copy test into separate directory
+gulp.task(`moveTest`, function () {
+   return gulp.src('build/scripts/test*.js')
+        .pipe(gulp.dest(`tests`));
+});
+
+
+
 
 // images desktop
 gulp.task('imagemin', function () {
