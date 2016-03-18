@@ -6,8 +6,9 @@ interface IAggregatorOptions {
 }
 
 interface IAggregator {
-	addMarker (markerCoords: any): number;
+	addNewMarker (markerCoords: any, markerData: MarkerDataType): number;
 	getBaseMarkers (): any [];
+    filter (newFilter: FilterType): void;
 	start (): void;
 	stop (): void;
 }
@@ -46,6 +47,7 @@ interface ILMarker {
     addTo: (map: IMap) => ILMarker;
     setIcon: (icon: any) => ILMarker;
     bindPopup: (text: any) => ILMarker;
+    bindLabel: (text: any, options?: {noHide?: boolean}) => ILMarker;
     on (event: string, callback: () => void, context: any): ILMarker;
     off (event: string, callback: () => void, context: any): ILMarker;
     m?: number;

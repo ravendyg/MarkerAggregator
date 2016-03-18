@@ -11,7 +11,7 @@ export class MarkerAggregator implements IAggregator {
 		// container with private vars
 		private _map: IMap;
 		// leaflet base markers
-		// private _baseMarkers: MarkerType [];
+		private _baseMarkers: MarkerType [];
         private _baseMarkersTree: ID2Tree<MarkerType>;
 		// leaflet composite markers
 		// private _compositeMarkers = {};
@@ -33,6 +33,8 @@ export class MarkerAggregator implements IAggregator {
 		private _eastSouth: any;
 		// marker internal id
 		private _id: number;
+        // filter settings
+        private _filter: FilterType;
         
         private _compositeIcon: any;
 		
@@ -50,31 +52,42 @@ export class MarkerAggregator implements IAggregator {
 				this._map = map;
 				this._baseZoom = options.baseZoom || 15;
 				this._zoomStep = options.zoomStep || 1;
-				this._minZoom = options.minZoom || 7;
+				this._minZoom = options.minZoom || 5;
 				this._minZoom = this._baseZoom  - (this._baseZoom - this._minZoom) / 2 * 2;
-				this._baseWindowSize = options.baseWindowSize || 0.005;
+				this._baseWindowSize = options.baseWindowSize || 0.008;
 			}
             
             this._id = 0;
             this._eastSouth = null;
             
-            // this._baseMarkers = [];
+            this._baseMarkers = [];
             this._baseMarkersTree = null;
             
             this._zoomLevels = [];
  
+            // set up filter, disabled by default
+            this._filter = {
+                buyVal: -1,
+                sellVal: -1,
+                rad: false,
+                center: {lat: 0, lng: 0},
+                radVal: 10
+            }
 			
-			for (var j=this._baseZoom; j>=this._minZoom; j-=this._zoomStep) {
-console.log(j);
-				this._zoomLevels[j] = {
-					windowSize: this._baseWindowSize * Math.pow(1.7, this._baseZoom - j),
-					// markers: {},
-                    compositeMarkersTree: null
-				};
-			}
+			this._resetZoomLevels();
 			
 			this._setCurrentZoomLevel();
 		}
+        
+        // remove all composite markers
+        private _resetZoomLevels () {
+            for (var j=this._baseZoom; j>=this._minZoom; j-=this._zoomStep) {
+				this._zoomLevels[j] = {
+					windowSize: this._baseWindowSize * Math.pow(1.7, this._baseZoom - j),
+                    compositeMarkersTree: null
+				};
+			}
+        }
 		
         /*** calculate what set of markers (zoomLevel) to display based on the current map zoom */
         private _setCurrentZoomLevel () {
@@ -113,7 +126,7 @@ console.log(j);
                         marker: L.marker(
                             [coords.lat, coords.lng],
                             {icon: L.divIcon({html: '<div class="composite-icon"><p>1</p></div>'})}
-                        ).on(`click`, this._zoomin),
+                        ).on(`click`, this._zoomin).bindLabel(baseMarker.buy + ' / ' + baseMarker.sell, { noHide: true }),
                         refs: [baseMarker]
                     }
                     // create a tree with this c marker
@@ -140,12 +153,18 @@ console.log(j);
                         ], {icon: L.divIcon(
                                 {html: `<div class="composite-icon"><p>${compositeMarker.refs.length}</p></div>`}
                         )});
+                        compositeMarker.buy = compositeMarker.refs.reduce( (pv, cv) => (cv.buy < pv) ? cv.buy : pv,
+                                                                                compositeMarker.refs[0].buy);
+                        compositeMarker.sell = compositeMarker.refs.reduce( (pv, cv) => (cv.sell > pv) ? cv.sell : pv,
+                                                                                compositeMarker.refs[0].sell);
+                        compositeMarker.marker.bindLabel(
+                            compositeMarker.buy + ' / ' + baseMarker.sell, { noHide: true });
                     } else {
                         // if not, create a new c marker
                         compositeMarker = {
                             marker: L.marker([coords.lat, coords.lng], {
                                         icon: L.divIcon({html: '<div class="composite-icon"><p>1</p></div>'})
-                                    }),
+                                    }).bindLabel(baseMarker.buy + ' / ' + baseMarker.sell, { noHide: true }),
                             refs: [baseMarker]
                         }    
                         // add to the tree
@@ -155,7 +174,7 @@ console.log(j);
                 // click handler
                 compositeMarker.marker.on(
                     `click`,
-                    () => {this._zoomin(compositeMarker.marker.getLatLng())},
+                    () => {this._zoomin(compositeMarker.marker.getLatLng());},
                     this
                 );
                 // link base marker to it
@@ -166,48 +185,26 @@ console.log(j);
                 if (j === this._currentZoomLevel) {
                     compositeMarker.marker.addTo(this._map);
                 }
-				// calculate composite marker's position
-				// latIndex = Math.floor((baseMarkerRefLink.getLatLng().lat - this._eastSouth.lat) / this._zoomLevels[''+j].windowSize);
-				// lngIndex = Math.floor((baseMarkerRefLink.getLatLng().lng - this._eastSouth.lng) / this._zoomLevels[''+j].windowSize);
-				// if (!this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex] ||
-				// 	this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex].baseMarkers.length === 0) {
-				// 		compositeMarkerRef = L.marker([ baseMarkerRefLink.getLatLng().lat, baseMarkerRefLink.getLatLng().lng ]); 
-				// 		// first marker in this cell
-				// 		this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex] = {
-				// 			marker: compositeMarkerRef,
-				// 			baseMarkers: [baseMarkerRefLink]
-				// 		}
-				// } else {
-				// 	// save parameters of the old composite marker
-				// 	var counter = this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex].baseMarkers.length;
-				// 	var oldLat = this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex].marker.getLatLng().lat,
-				// 		oldLng = this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex].marker.getLatLng().lng;
-				// 	// remove it from the map
-				// 	this._map.removeLayer(this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex].marker);
-				// 	// insert new composite marker
-				// 	this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex].marker = compositeMarkerRef =
-				// 		L.marker([ (baseMarkerRefLink.getLatLng().lat + oldLat*counter) / (counter+1),
-				// 					(baseMarkerRefLink.getLatLng().lng + oldLng*counter) / (counter+1)
-				// 		])
-				// 	// reference to the base marker
-				// 	this._zoomLevels[''+j].markers[latIndex+'|'+lngIndex].baseMarkers.push(baseMarkerRefLink);
-				// }
-				// // check whether it's time to display current composite marker
-				// if (j === this._currentZoomLevel) {
-				// 	compositeMarkerRef.addTo(this._map);
-				// }
 			}	
 		}
+        
+        /** checks whether base marker is removed by current filter settings */
+        private _checkFilter (marker: MarkerType): boolean {
+            if (marker.buy < this._filter.buyVal) return false;
+            if (marker.sell > this._filter.sellVal) return false;
+            if (this._filter.rad && 
+                marker.marker.getLatLng().distanceTo(this._filter.center) > this._filter.radVal) return false;
+            
+            return true;
+        }
 		
-        // public addMarker (coords: any): number {
-		/*** add new leaflet marker to the aggregator 
-		 * @marker - leaflet marker object
-		 * @return - number of base markers if successful, -1 if not
-		 * because it uses eastern-southern point as a reference, it's better to start adding markers from
-		 * the most easter and most southern markers to prevent general recalculation  
-		*/
-		public addMarker (coords: any): number {
-			var localCoords = {lat:0, lng:0};
+        /** external interface for adding markers 
+         * @coords - marker coordinates either PointType or [lat, lng]
+         * @return - base marker id
+        */
+        public addNewMarker (coords: any, bankData: MarkerDataType): number {
+            var localCoords = {lat:0, lng:0};
+            var tempNum: number;
 			// read coordinates 
 			if (Array.isArray(coords) && coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
 				localCoords.lat = coords[0];
@@ -218,14 +215,59 @@ console.log(j);
 			} else {
 				return -1;
 			}
-            
-            // create leaf content - marker
-            var marker: MarkerType = {
-                marker: L.marker([localCoords.lat, localCoords.lng]),
-                aId: ++this._id,
-                refs: []
+
+            // check prices
+            if (bankData.buy && bankData.sell) {
+                // check the same bank
+                if (this._baseMarkers.reduce( (pv, cv) => {
+                       if (!pv && (cv.bankName !== bankData.bankName || cv.address !== bankData.address)) return false;
+                       else return true;  
+                }, false)) return undefined;
+                
+                // create leaf content - marker
+                var marker: MarkerType = {
+                    marker: L.marker([localCoords.lat, localCoords.lng]),
+                    aId: ++this._id,
+                    refs: [],
+                    buy: bankData.buy,
+                    sell: bankData.sell,
+                    bankName: bankData.bankName,
+                    address: bankData.address
+                }
+                
+                // reset filter if necessary
+                tempNum = Math.floor((bankData.buy-0.01)*10)/10;
+                if (this._filter.buyVal > tempNum || this._filter.buyVal < 0) { this._filter.buyVal = tempNum; }
+                tempNum = Math.ceil((+bankData.sell+0.01)*10)/10;
+                if (this._filter.sellVal < tempNum || this._filter.sellVal < 0) { this._filter.sellVal = tempNum; }
+                
+                this._baseMarkers.push(marker);
+                
+                // text info on the markers
+                marker.marker
+                    .bindPopup(
+                        (bankData.bankName ? '<p>'+bankData.bankName+'</p>' : '') +
+                        (bankData.address ? '<p>'+bankData.address+'</p>' : '') +
+                        (bankData.tel ? '<p>'+bankData.tel+'</p>' : '') +
+                        (bankData.wh ? '<p>'+bankData.wh+'</p>' : '') +
+                        (bankData.info ? '<p style="color: red;">'+bankData.info+'</p>' : '')
+                    )
+                    .bindLabel(bankData.buy + ' / ' + bankData.sell, { noHide: true });
+                
+                this._addMarker(marker);
+                
+                return marker.aId;
+            } else {
+                return undefined;
             }
-            // this._baseMarkers.push(marker);
+        }
+        
+		/*** add new marker to the displayed ones
+		 * @localCoords - base marker coordinates
+         * @marker - base marker
+		*/
+		private _addMarker (marker: MarkerType): void {
+            var localCoords: PointType = marker.marker.getLatLng();
             // this tree of no use now, maybee for the future
             // if it's the first marker inserted
             if (!this._baseMarkersTree) {
@@ -241,62 +283,38 @@ console.log(j);
             if (this._baseZoom - this._zoomStep < this._currentZoomLevel) {
                 marker.marker.addTo(this._map);
             }
-			
-			// var basePointShift = false;
-			// // calculate center using the first one
-			// if (!this._eastSouth) {
-			// 	this._eastSouth = {
-			// 		lat: localCoords.lat - 0.00001,
-			// 		lng: localCoords.lng + 0.00001
-			// 	}
-			// } else if (this._eastSouth.lat >= localCoords.lat) {
-			// 	// new base point
-			// 	this._eastSouth.lat = localCoords.lat - 0.00001;
-			// 	basePointShift = true;
-			// } else if (this._eastSouth.lng <= localCoords.lng) {
-			// 	// -//-
-			// 	this._eastSouth.lng = localCoords.lng + 0.00001;
-			// 	basePointShift = true;
-			// }
-			
-			// if (basePointShift) {
-			// 	// recalculate everything
-			// 	// remove composite markers
-			// 	for (var j=this._baseZoom-this._zoomStep; j>=this._minZoom; j-=this._zoomStep) {
-			// 		// markers on the current zoom layer (currently displayed) from the map
-			// 		if (j === this._currentZoomLevel) {
-			// 			for (var k in this._zoomLevels[''+j].markers) {
-			// 				this._map.removeLayer(this._zoomLevels[''+j].markers[k].marker);	
-			// 			}
-			// 		}
-			// 		// from _zoomLevels
-			// 		this._zoomLevels[''+j] = {
-			// 			windowSize: this._baseWindowSize * Math.pow(1.7, this._baseZoom - j),
-			// 			markers: {}
-			// 		};
-			// 	}
-			// 	// remove links to them from base markers
-			// 	// for every existing base marker recalculate composite
-			// 	for (var j=0; j<this._baseMarkers.length; j++) {
-			// 		this.createCompositeMarkers(this._baseMarkers[j]);
-			// 	}
-			// } else {
-			// 	// just add composite markers including given base marker
-			// 	this.createCompositeMarkers(baseMarkerRef);	
-			// }
-			
-			
-			
- 
-			// if (this._currentZoomLevel === this._baseZoom) {
-			// 	// display base marker
-			// 	baseMarkerRef.addTo(this._map);
-			// }
-
-			// // return new base marker id
-			// return baseMarkerRef.aId;
-            return 0;
+            
+            // 
 		}
+        
+        /*** reset filter and recalculate*/
+        public filter (newFilter: FilterType): void {
+            var i: number;
+            // better use Object assign
+            this._filter = {
+                buyVal: newFilter.buyVal ? newFilter.buyVal : this._filter.buyVal,
+                sellVal: newFilter.sellVal ? newFilter.sellVal : this._filter.sellVal,
+                rad: newFilter.rad ? true : false,
+                center: newFilter.center ? newFilter.center : this._filter.center,
+                radVal: newFilter.radVal ? newFilter.radVal : this._filter.radVal,
+            };
+            
+            // hide old markers
+            var oldMarkers = this._zoomLevels[this._currentZoomLevel].compositeMarkersTree.traverse(); 
+            for (i=0; i < oldMarkers.length; i++) {
+                this._map.removeLayer(oldMarkers[i].marker);
+            }
+            
+            // remove old markers
+            this._resetZoomLevels();
+            this._baseMarkersTree = null;
+            
+            var markersLeft: MarkerType [] = this._baseMarkers.filter( e => this._checkFilter(e));
+            for (i=0; i < markersLeft.length; i++) {
+                this._addMarker(markersLeft[i]);
+            }
+        }
+        
 		/*** return base markers */
 		public getBaseMarkers (): MarkerType [] {
 			return this._baseMarkersTree.traverse();
@@ -326,46 +344,9 @@ console.log(j);
                 }
             } else {
 // console.log(`no need in rerendering`);
-            }
-                 
-                
-//                 this._zoomLevels[oldZoom];
-// 				// var i;
-// 				this._setCurrentZoomLevel();
-// console.log(this._zoomLevels[oldZoom].compositeMarkersTree.traverse());
-// console.log(this._zoomLevels[this._currentZoomLevel].compositeMarkersTree.traverse());
-
-
-
-				// if (oldZoom !== self._currentZoomLevel) {
-				// 	// need to display different group of markers
-				// 	// hide old
-				// 	if (oldZoom === self._baseZoom) {
-				// 		// hide base markers
-				// 		for (i=0; i<self._baseMarkers.length; i++) {
-				// 			self._map.removeLayer(self._baseMarkers[i]);
-				// 		}
-				// 	} else {
-				// 		// hide composite markers
-				// 		for (var key in self._zoomLevels[''+oldZoom].markers) {
-				// 			self._map.removeLayer(self._zoomLevels[''+oldZoom].markers[key].marker);
-				// 		}
-				// 	}		
-				// 	// display new
-				// 	if (self._zoomLevels[''+self._currentZoomLevel]) {
-				// 		// composite markers
-				// 		for (var key in self._zoomLevels[''+self._currentZoomLevel].markers) {
-				// 			self._zoomLevels[''+self._currentZoomLevel].markers[key].marker.addTo(self._map);
-				// 		}
-				// 	} else {
-				// 		// base markers
-				// 		for (i=0; i<self._baseMarkers.length; i++) {
-				// 			self._baseMarkers[i].addTo(self._map);
-				// 		}
-				// 	}
-					
-				// }
-			}
+            }         
+        }
+        
 		/*** start listen for map's zoom change */
 		public start (): void {
             // take care not to call rerender many times
@@ -375,6 +356,7 @@ console.log('inside start');
             // initialize
             this._rerender();
 		}
+        
 		/*** stop listen for map's zoom change */
 		public stop (): void {
 console.log('inside stop');

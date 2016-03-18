@@ -22,7 +22,7 @@ var test: IAggregator;
     document.addEventListener('DOMContentLoaded', function () {
     
         // display map
-        map = L.map('map').setView([avgLat, avgLng], 16);
+        map = L.map('map').setView([avgLat, avgLng], 12);
         L.tileLayer.provider('OpenStreetMap.HOT').addTo(map);
          
         // instantiate aggregator
@@ -32,10 +32,19 @@ var test: IAggregator;
         //                     [L.marker([points[0].lat, points[0].lng]),0]);
 
         for (var i=1; i < points.length; i++) {
-            test.addMarker({lat: points[i].lat, lng: points[i].lng});
+            // some noise to prevent marker overlapping
+            test.addNewMarker({
+                    lat: points[i].lat + (Math.random()-0.5)/10000,
+                    lng: points[i].lng + (Math.random()-0.5)/10000
+                }, points[i]
+            );
             // tree.addLeaf({lat: points[i].lat, lng: points[i].lng}, [L.marker([points[i].lat, points[i].lng]),i]);
             // L.marker([points[i].lat, points[i].lng]).bindLabel(''+i, { noHide: true }).addTo(map);
         }
+        
+        test.start();
+        
+        // console.log(points);
         
         // var q = test.getBaseMarkers();
         // console.log(q);
@@ -56,7 +65,7 @@ var test: IAggregator;
         //     if (q[j]) q[j].marker.addTo(map);
         // } 
         
-        test.start();
+        
             
 // console.log(test.getBaseMarkers());
 
