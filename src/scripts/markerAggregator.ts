@@ -21,7 +21,7 @@ export class MarkerAggregator implements IAggregator {
 		// private _compositeMarkersData = [];
 		// zoom level up to which (>=) base markers are displayed on the map
 		private _baseZoom: number;
-		// zoom level below which (<=) new markera are not created 
+		// zoom level below which (<=) new markers are not created 
 		private _minZoom: number;
 		// how much should zoom change to trigger markers change
 		private _zoomStep: number;
@@ -33,6 +33,8 @@ export class MarkerAggregator implements IAggregator {
 		private _eastSouth: any;
 		// marker internal id
 		private _id: number;
+        
+        private _compositeIcon: any;
 		
 		private _zoomLevels: {
             windowSize: number,
@@ -52,6 +54,18 @@ export class MarkerAggregator implements IAggregator {
 				this._minZoom = this._baseZoom  - (this._baseZoom - this._minZoom) / 2 * 2;
 				this._baseWindowSize = options.baseWindowSize || 0.005;
 			}
+            
+            // icon for base markers
+            this._compositeIcon = L.icon({
+                iconUrl: 'trash/leaf-green.png',
+                shadowUrl: 'trash/leaf-shadow.png',
+
+                iconSize:     [38, 95], // size of the icon
+                shadowSize:   [50, 64], // size of the shadow
+                iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
+                shadowAnchor: [4, 62],  // the same for the shadow
+                popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+            });
             
             this._id = 0;
             this._eastSouth = null;
@@ -95,43 +109,59 @@ console.log(j);
 			var latIndex: number, lngIndex: number;
 			var compositeMarkerRef: any;
             var nearest: NearestType<MarkerType>;
+            var compositeMarker: MarkerType;
 			// for every zoom level
-			// for (var j=baseZoom; j >= minZoom; j-=zoomStep) {
-            for (var j=12; j===12; j++) {
+			for (var j=minZoom; j < baseZoom; j+=zoomStep) {
+            // for (var j=12; j===12; j++) {
 // console.log(zoomLevels[j]);
                 if (!zoomLevels[j].compositeMarkersTree) {
                     // no composites yet
-                    zoomLevels[j].compositeMarkersTree = new D2tree(coords, baseMarker);
-                    baseMarker.marker.bindPopup(JSON.stringify(coords,null,2)).addTo(this._map);
+                    // create c marker
+                    compositeMarker = {
+                        marker: L.marker([coords.lat, coords.lng]).setIcon(this._compositeIcon).bindPopup(`1`),
+                        refs: [baseMarker]
+                    }
+                    // create a tree with this c marker
+                    zoomLevels[j].compositeMarkersTree = new D2tree(coords, compositeMarker);
                 } else {
                     // search for the nearest composite on this zoom level
-                    // within the radius of windowSize
                     nearest = zoomLevels[j].compositeMarkersTree.findNearest( baseMarker.marker.getLatLng() );
-console.log(zoomLevels[j].windowSize);
-console.log(nearest);
-                    
+                    // within the radius of windowSize
                     if (nearest.dist <= zoomLevels[j].windowSize) {
-                        // if exists, add add new base marker to it
-                        // implement
-                        var greenIcon = L.icon({
-    iconUrl: 'trash/leaf-green.png',
-    shadowUrl: 'trash/leaf-shadow.png',
-
-    iconSize:     [38, 95], // size of the icon
-    shadowSize:   [50, 64], // size of the shadow
-    iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
-    shadowAnchor: [4, 62],  // the same for the shadow
-    popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
-});
-baseMarker.marker.setIcon(greenIcon).bindPopup(JSON.stringify(coords,null,2)).addTo(this._map);
+                        // if exists, add a link to the new base marker
+                        // but first remove from the map if necessary
+                        if (j === this._currentZoomLevel) {
+                            this._map.removeLayer(nearest.content.marker);
+                        }
+                        compositeMarker = nearest.content;
+                        compositeMarker.refs.push(baseMarker);
+                        // recalculate marker position
+                        // important! in order to avoid recalculating the whole tree
+                        // lat and lng of the tree node stays the same
+                        // but how it is displayed to the user changes
+                        compositeMarker.marker = L.marker([
+                            compositeMarker.refs.reduce( (pv, cv) => pv + cv.marker.getLatLng().lat, 0) / compositeMarker.refs.length,
+                            compositeMarker.refs.reduce( (pv, cv) => pv + cv.marker.getLatLng().lng, 0) / compositeMarker.refs.length,
+                        ]).setIcon(this._compositeIcon).bindPopup(compositeMarker.refs.length),
+                        // change popup
+                        compositeMarker.marker.bindPopup(`${compositeMarker.refs.length}`);
                     } else {
-                        // if not, create new    
-                        zoomLevels[j].compositeMarkersTree.addLeaf(coords, baseMarker);
-                        baseMarker.marker.bindPopup(JSON.stringify(coords,null,2)).addTo(this._map);
-                    }
-                         
-                    
-                    
+                        // if not, create a new c marker
+                        compositeMarker = {
+                            marker: L.marker([coords.lat, coords.lng]).setIcon(this._compositeIcon).bindPopup(`1`),
+                            refs: [baseMarker]
+                        }    
+                        // add to the tree
+                        zoomLevels[j].compositeMarkersTree.addLeaf(coords, compositeMarker);
+                    }     
+                }
+                // link base marker to it
+                // !!! mutating method argument, circular linking !!!
+                baseMarker.refs.push(compositeMarker);
+                
+                // if necessary, show on the map
+                if (j === this._currentZoomLevel) {
+                    compositeMarker.marker.addTo(this._map);
                 }
 				// calculate composite marker's position
 				// latIndex = Math.floor((baseMarkerRefLink.getLatLng().lat - this._eastSouth.lat) / this._zoomLevels[''+j].windowSize);
@@ -189,19 +219,25 @@ baseMarker.marker.setIcon(greenIcon).bindPopup(JSON.stringify(coords,null,2)).ad
             // create leaf content - marker
             var marker: MarkerType = {
                 marker: L.marker([localCoords.lat, localCoords.lng]),
-                aId: ++this._id
+                aId: ++this._id,
+                refs: []
             }
             // this._baseMarkers.push(marker);
             // this tree of no use now, maybee for the future
             // if it's the first marker inserted
             if (!this._baseMarkersTree) {
                 this._baseMarkersTree = new D2tree(localCoords, marker);
+                // link zoomLevels[baseZoom] to the baseMarkerTree for the sake of rerender method simplicity
+                this._zoomLevels[this._baseZoom].compositeMarkersTree = this._baseMarkersTree;
             } else {
                 this._baseMarkersTree.addLeaf(localCoords, marker);
             }
             this._createCompositeMarkers(localCoords, marker);
             
-            
+            // if zoom is big enough display base markers
+            if (this._baseZoom - this._zoomStep < this._currentZoomLevel) {
+                marker.marker.addTo(this._map);
+            }
 			
 			// var basePointShift = false;
 			// // calculate center using the first one
@@ -265,27 +301,29 @@ baseMarker.marker.setIcon(greenIcon).bindPopup(JSON.stringify(coords,null,2)).ad
         
         /*** redraw markers on the map */
         private _rerender () {
-console.log('inside rerender');
-                var tmpLMarkers: MarkerType [];
-                var j: number;
-				// store old zoom level and calculate new one
-				var oldZoom = this._currentZoomLevel;
-                this._setCurrentZoomLevel();
-                
-                if (this._zoomLevels[this._currentZoomLevel] &&
-                        (this._zoomLevels[this._currentZoomLevel] !== this._zoomLevels[oldZoom])) {
-                    // if new zoom level exists and is not the same as the previous
-                    tmpLMarkers = this._zoomLevels[oldZoom].compositeMarkersTree.traverse();
-                    // remove old markers from the map
-                    for (j=0; j < tmpLMarkers.length; j++) {
-                        this._map.removeLayer(tmpLMarkers[j].marker);
-                    }
-                    tmpLMarkers = this._zoomLevels[this._currentZoomLevel].compositeMarkersTree.traverse();
-                    // add new markers
-                    for (j=0; j < tmpLMarkers.length; j++) {
-                        tmpLMarkers[j].marker.addTo(this._map)
-                    }
+// console.log('inside rerender');
+            var tmpLMarkers: MarkerType [];
+            var j: number;
+            // store old zoom level and calculate new one
+            var oldZoom = this._currentZoomLevel;
+            this._setCurrentZoomLevel();
+            
+            if (this._zoomLevels[this._currentZoomLevel] &&
+                    (this._zoomLevels[this._currentZoomLevel] !== this._zoomLevels[oldZoom])) {
+                // if new zoom level exists and is not the same as the previous
+                tmpLMarkers = this._zoomLevels[oldZoom].compositeMarkersTree.traverse();
+                // remove old markers from the map
+                for (j=0; j < tmpLMarkers.length; j++) {
+                    this._map.removeLayer(tmpLMarkers[j].marker);
                 }
+                tmpLMarkers = this._zoomLevels[this._currentZoomLevel].compositeMarkersTree.traverse();
+                // add new markers
+                for (j=0; j < tmpLMarkers.length; j++) {
+                    tmpLMarkers[j].marker.addTo(this._map)
+                }
+            } else {
+// console.log(`no need in rerendering`);
+            }
                  
                 
 //                 this._zoomLevels[oldZoom];

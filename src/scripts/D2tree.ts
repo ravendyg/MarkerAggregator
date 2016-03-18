@@ -109,12 +109,12 @@ export class D2tree <T> implements ID2Tree<T> {
         // if this branch doesn't exist
         if (!marker) return Infinity;
         // else calculate
-console.log(`lat1: ${marker.getLat()}; lat2: ${coords.lat}`);
-console.log(`lng1: ${marker.getLng()}; lng2: ${coords.lng}`);
-console.log(`dist ${Math.sqrt(
-            Math.pow(marker.getLat() - coords.lat, 2) + 
-            Math.pow(marker.getLng() - coords.lng, 2)
-        )}`);
+// console.log(`lat1: ${marker.getLat()}; lat2: ${coords.lat}`);
+// console.log(`lng1: ${marker.getLng()}; lng2: ${coords.lng}`);
+// console.log(`dist ${Math.sqrt(
+//             Math.pow(marker.getLat() - coords.lat, 2) + 
+//             Math.pow(marker.getLng() - coords.lng, 2)
+//         )}`);
         
         return Math.sqrt(
             Math.pow(marker.getLat() - coords.lat, 2) + 

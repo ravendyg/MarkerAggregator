@@ -27,12 +27,22 @@ var gulp = require('gulp'),
 
 
 // gulp gulp-sass less-plugin-clean-css gulp-autoprefixer gulp-minify-css gulp-jshint jshint-stylish gulp-uglify gulp-usemin gulp-imagemin gulp-cache gulp-rev del gulp-typescript gulp-sourcemaps
+gulp.task(`default`, [`watch`]);
 // watch
 gulp.task('watch', function () {
 //    gulp.watch('src/scripts/app.ts', ['compileTs']);
    gulp.watch('src/styles/*.less', ['styles']);
    gulp.watch('build/scripts/*.js', ['moveTest']);
 });
+
+// build
+gulp.task('build', ['clean'], function () {
+    gulp.start('usemin', 'imagemin');
+});
+
+
+
+
    
 // styles
 gulp.task('styles', function () {
@@ -53,8 +63,6 @@ gulp.task(`moveTest`, function () {
    return gulp.src('build/scripts/test*.js')
         .pipe(gulp.dest(`tests`));
 });
-
-
 
 
 // images desktop
@@ -79,7 +87,4 @@ gulp.task(`clean`, function () {
     return del(['build/scripts/vendor.js']); 
 });
 
-// build
-gulp.task('build', ['clean'], function () {
-    gulp.start('usemin', 'imagemin');
-});
+

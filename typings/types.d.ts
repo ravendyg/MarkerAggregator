@@ -22,5 +22,8 @@ declare type NearestType<T>= {
 
 declare type MarkerType = {
     marker: ILMarker,
-    aId?: number
+    refs: MarkerType [],
+    aId?: number,
+    max?: number,
+    min?: number
 }
