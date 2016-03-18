@@ -14,6 +14,8 @@ interface IAggregator {
 
 interface IMap {
 	getZoom (): number;
+    zoomIn (delta?: number): void;
+    setView (point: PointType, zoom?: number): void;
 	on (event: string, callback: () => void, context: any): any;
     off (event: string, callback: () => void, context: any): any;
 	removeLayer (layer: any): any;
@@ -44,5 +46,7 @@ interface ILMarker {
     addTo: (map: IMap) => ILMarker;
     setIcon: (icon: any) => ILMarker;
     bindPopup: (text: any) => ILMarker;
+    on (event: string, callback: () => void, context: any): ILMarker;
+    off (event: string, callback: () => void, context: any): ILMarker;
     m?: number;
 }

@@ -55,18 +55,6 @@ export class MarkerAggregator implements IAggregator {
 				this._baseWindowSize = options.baseWindowSize || 0.005;
 			}
             
-            // icon for base markers
-            this._compositeIcon = L.icon({
-                iconUrl: 'trash/leaf-green.png',
-                shadowUrl: 'trash/leaf-shadow.png',
-
-                iconSize:     [38, 95], // size of the icon
-                shadowSize:   [50, 64], // size of the shadow
-                iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
-                shadowAnchor: [4, 62],  // the same for the shadow
-                popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
-            });
-            
             this._id = 0;
             this._eastSouth = null;
             
@@ -98,6 +86,11 @@ console.log(j);
 			}
 		}
         
+        /*** zoom in by zoom step */
+        private _zoomin (coords: PointType) {
+            this._map.setView(coords, this._currentZoomLevel+this._zoomStep);
+        }
+        
         /*** when first marker is added iterate over all zoom levels and create trees 
          * to minimize computing expenses don't recalculate composite marker position
          * just change it's content - if there is no base markers in it make it null
@@ -110,18 +103,17 @@ console.log(j);
 			var compositeMarkerRef: any;
             var nearest: NearestType<MarkerType>;
             var compositeMarker: MarkerType;
-            var compositeIcon = L.divIcon({html: '<div class="composite-icon"><p>qq</p></div>'});
+            // var compositeIcon = L.divIcon({html: '<div class="composite-icon"><p>qq</p></div>'});
 			// for every zoom level
 			for (var j=minZoom; j < baseZoom; j+=zoomStep) {
-            // for (var j=12; j===12; j++) {
-// console.log(zoomLevels[j]);
                 if (!zoomLevels[j].compositeMarkersTree) {
                     // no composites yet
                     // create c marker
                     compositeMarker = {
-                        marker: L.marker([coords.lat, coords.lng], {icon: compositeIcon})
-                                    // .setIcon(this._compositeIcon)
-                                    .bindPopup(`1`),
+                        marker: L.marker(
+                            [coords.lat, coords.lng],
+                            {icon: L.divIcon({html: '<div class="composite-icon"><p>1</p></div>'})}
+                        ).on(`click`, this._zoomin),
                         refs: [baseMarker]
                     }
                     // create a tree with this c marker
@@ -145,24 +137,27 @@ console.log(j);
                         compositeMarker.marker = L.marker([
                             compositeMarker.refs.reduce( (pv, cv) => pv + cv.marker.getLatLng().lat, 0) / compositeMarker.refs.length,
                             compositeMarker.refs.reduce( (pv, cv) => pv + cv.marker.getLatLng().lng, 0) / compositeMarker.refs.length,
-                        ], {icon: compositeIcon})
-                            // .setIcon(this._compositeIcon)
-                            .bindPopup(compositeMarker.refs.length),
-                        // change popup
-                        compositeMarker.marker.bindPopup(`${compositeMarker.refs.length}`);
+                        ], {icon: L.divIcon(
+                                {html: `<div class="composite-icon"><p>${compositeMarker.refs.length}</p></div>`}
+                        )});
                     } else {
                         // if not, create a new c marker
-                        // var myIcon = L.divIcon({html: '<div style="height: 20px; width: 20px; border-radius: 50%;">qq</div>'});
                         compositeMarker = {
-                            marker: L.marker([coords.lat, coords.lng], {icon: compositeIcon})
-                                        // .setIcon(this._compositeIcon)
-                                        .bindPopup(`1`),
+                            marker: L.marker([coords.lat, coords.lng], {
+                                        icon: L.divIcon({html: '<div class="composite-icon"><p>1</p></div>'})
+                                    }),
                             refs: [baseMarker]
                         }    
                         // add to the tree
                         zoomLevels[j].compositeMarkersTree.addLeaf(coords, compositeMarker);
                     }     
                 }
+                // click handler
+                compositeMarker.marker.on(
+                    `click`,
+                    () => {this._zoomin(compositeMarker.marker.getLatLng())},
+                    this
+                );
                 // link base marker to it
                 // !!! mutating method argument, circular linking !!!
                 baseMarker.refs.push(compositeMarker);
